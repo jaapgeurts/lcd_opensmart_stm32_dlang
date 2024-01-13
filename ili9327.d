@@ -1,5 +1,4 @@
 module ili9327;
-// actually the module is a 9340/9341
 
 import mcudruntime;
 import io;
@@ -43,7 +42,7 @@ enum {
     CMD_PIXSET   = 0x3a,
     CMD_WRDISBV  = 0x51,
     CMD_WRCTRLD  = 0x53,
-    CMD_RDID4    = 0xd3,
+    CMD_RDCODE   = 0xef,
 }
 
 enum {
@@ -73,6 +72,12 @@ void lcd_setup(ref ILI9327 lcd) {
   // set port to write
   gpio_mode_setup(GPIOA,GPIO_MODE_OUTPUT,GPIO_PUPD_NONE, RD | WR | CD );
   gpio_mode_setup(GPIOB,GPIO_MODE_OUTPUT,GPIO_PUPD_NONE, CS);
+
+  // GPIO_OSPEED_2MHZ GPIO_OSPEED_50MHZ GPIO_OSPEED_100MHZ
+  // Doesn't seem to have any speed increase effect.
+  // gpio_set_output_options(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, D0 | D3 | D5 | D7 | RD | WR | CD);
+  // gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, D2 | D4 | D6 | CS);
+  // gpio_set_output_options(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, D1);
 
   // These are all active low, so set high
   gpio_set(GPIOA, RD);
@@ -144,8 +149,6 @@ private ubyte read_data() {
   gpio_clear(GPIOA,RD);
 
   delay(1);
-  // Latch data on write returns to high.
-  gpio_set(GPIOA,RD);
 
   // prepare data
   ubyte data = 0;
@@ -158,19 +161,20 @@ private ubyte read_data() {
   if (gpio_get(GPIOB,D6)) data |= 0x40;
   if (gpio_get(GPIOA,D7)) data |= 0x80;
 
-  delay(1);
+    // Latch data on write returns to high.
+  gpio_set(GPIOA,RD);
 
   return data;
 }
 
-private ubyte[2] read_lcd(ubyte cmd) {
+private ubyte[6] read_lcd(ubyte cmd) {
   // select chip
   gpio_clear(GPIOB, CS);
 
   write_cmd(cmd, true);
 
-  ubyte[2] codes;
-  foreach(i ; 0..2)
+  ubyte[6] codes;
+  foreach(i ; 0..6)
     codes[i] = read_data();
 
   // deselect chip
@@ -182,22 +186,23 @@ private ubyte[2] read_lcd(ubyte cmd) {
 
 void device_code_read() {
 
-    ubyte[2] codes = read_lcd(0xda);
+    ubyte[6] codes = read_lcd(CMD_RDCODE);
 
     foreach(code ; codes) {
         writeln(cast(uint)code);
     }
-
-
 }
 
 void set_display_off(ref const ILI9327 lcd) {
     write_lcd_cmd(CMD_SWRESET); // reset
     //write_lcd_cmd(0xaa);
     //write_lcd_cmd(0x55);
+    delay(10);
+
     write_lcd_cmd(CMD_DISPOFF);
     //write_lcd_cmd(0x38);
     write_lcd_cmd(CMD_SLPOUT);
+    delay(10);
     write_lcd_cmd(CMD_DINVOFF);
 
 //    write_lcd_cmd(0x29);
@@ -208,7 +213,7 @@ void set_display_off(ref const ILI9327 lcd) {
 
     //write_lcd_cmd(0x10);
 
-    write_lcd_cmd(CMD_MADCTL,ILI_MASK_MADCTL_MY | ILI_MASK_MADCTL_ML | ILI_MASK_MADCTL_MV);
+    write_lcd_cmd(CMD_MADCTL,ILI_MASK_MADCTL_MX | ILI_MASK_MADCTL_MV);
     write_lcd_cmd(CMD_PIXSET,0b0000101); //18bits/pixel. RGB 5-6-5
 
     write_lcd_cmd(CMD_NORON);
@@ -219,8 +224,8 @@ void set_display_off(ref const ILI9327 lcd) {
 
     // init done
 
-    //write_lcd_cmd(0x2a,0x00);
-    //write_lcd_cmd(0x2b,0x00);
+    write_lcd_cmd(0x2a,0x00);
+    write_lcd_cmd(0x2b,0x00);
 
     gpio_clear(GPIOB, CS);
     write_cmd(CMD_RAMWR,true);
@@ -232,9 +237,10 @@ void set_display_off(ref const ILI9327 lcd) {
     //     write_cmd(0x3f<<2,false); // R
     // }
     // RGB 5-6-5
-    ubyte r = 0x1f;
-    ubyte g = 0x3f;
-    ubyte b = 0x1f;
+    ubyte r = 0x1f; // max = 1f
+    ubyte g = 0x3f; // max = 3f
+    ubyte b = 0x00; // max = 1f
+    // screen size 240x432 = 103680 pixels
     foreach(i; 0..103680) {
          write_cmd(cast(ubyte)((b & 0x1f) << 5) | ((g&0x3f)>>3),false); // B
          write_cmd(((g&0x07)<<5) | (r&0x1f),false); // G

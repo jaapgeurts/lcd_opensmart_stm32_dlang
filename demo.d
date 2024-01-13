@@ -36,7 +36,7 @@ extern(C) void main()
 
     lcd_setup(lcd);
 
-    //device_code_read();
+    device_code_read();
 
     set_display_off(lcd);
 
