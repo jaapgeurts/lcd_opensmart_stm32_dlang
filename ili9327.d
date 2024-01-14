@@ -94,6 +94,7 @@ void lcd_setup(ref ILI9327 lcd) {
 
   write_lcd_cmd(CMD_SWRESET); // reset
   delay(1500); // TODO wait at least 10 frame period.
+
   write_lcd_cmd(CMD_SLPOUT); // wake up from sleep
   delay(500); // must wait >=5ms before another command. >=120ms before sleep again
 
@@ -104,20 +105,33 @@ void lcd_setup(ref ILI9327 lcd) {
   // write_lcd_cmd(CMD_WRCTRLD,0b00101100); // display control settings
   // write_lcd_cmd(CMD_WRDISBV,0xff); // display brightness
 
-
   write_lcd_cmd(CMD_MADCTL, AddressMode.ColumnPageOrder | AddressMode.RightToLeft); // memory access control
   write_lcd_cmd(CMD_PIXSET,0b0000101); //18bits/pixel. RGB 5-6-5
 
-  write_lcd_cmd(CMD_CASET,0x00); // Column Address Set
-  write_lcd_cmd(CMD_PASET,0x00); // Page Address set
+  // Column Address Set
+  gpio_clear(GPIOB, CS);
+  write_lcd(CMD_CASET,true);
+  write_lcd(0,false);
+  write_lcd(0,false);
+  write_lcd(1,false);
+  write_lcd(0xff,false);
+  gpio_set(GPIOB, CS);
+
+
+  // Page Address set
+  gpio_clear(GPIOB, CS);
+  write_lcd(CMD_PASET,true);
+  write_lcd(0,false);
+  write_lcd(0,false);
+  write_lcd(1,false);
+  write_lcd(0xff,false);
+  gpio_set(GPIOB, CS);
 
   // write_lcd_cmd(CMD_NORON);
 
   write_lcd_cmd(CMD_DISPON); // display on
 
   // init done
-
-  set_databus_read();
 
 }
 
