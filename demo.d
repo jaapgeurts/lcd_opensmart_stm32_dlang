@@ -31,14 +31,12 @@ extern(C) void main()
     gpio_setup();
     setupIO();
 
-    delay(10000);
     writeln("Hello world");
-
     lcd_setup(lcd);
 
     device_code_read();
 
-    set_display_off(lcd);
+    clear_display(lcd);
 
     writeln("Sent all data");
 

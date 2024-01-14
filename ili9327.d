@@ -25,9 +25,12 @@ private enum  {
     SD_CS = GPIO4, // B
 }
 
+// TODO: change to Named enum
 enum {
     CMD_SWRESET  = 0x01,
+    CMD_SLPIN    = 0x10,
     CMD_SLPOUT   = 0x11,
+    CMD_PTLON    = 0x10, // Partial Mode ON
     CMD_NORON    = 0x13,
     CMD_DINVOFF  = 0x20,
     CMD_DINVON   = 0x21,
@@ -36,6 +39,8 @@ enum {
     CMD_CASET    = 0x2a,
     CMD_PASET    = 0x2b,
     CMD_RAMWR    = 0x2c,
+    CMD_IDMOFF   = 0x38,
+    CMD_IDMON    = 0x39,
     CMD_VSCRDEF  = 0x33,
     CMD_MADCTL   = 0x36,
     CMD_VSCRSADD = 0x37,
@@ -44,14 +49,16 @@ enum {
     CMD_WRCTRLD  = 0x53,
     CMD_RDCODE   = 0xef,
 }
-
-enum {
-    ILI_MASK_MADCTL_MY  = 0x80,
-    ILI_MASK_MADCTL_MX  = 0x40,
-    ILI_MASK_MADCTL_MV  = 0x20,
-    ILI_MASK_MADCTL_ML  = 0x10,
-    ILI_MASK_MADCTL_BGR = 0x08,
-    ILI_MASK_MADCTL_MH  = 0x04,
+// TODO: change to Named enum
+enum AddressMode {
+    BottomToTop         = 0x08, // default is TopToBottom
+    RightToLeft         = 0x40, // default is LeftToRight
+    ColumnPageOrder     = 0x20, // default is Page/Column
+    RefreshBottomToTop  = 0x10, // default is TopToBottom
+    PixelOrderBGR       = 0x08, // default order is RGB
+    // latch order 0x04 (B2 must be 0)
+    HorizontalFlip      = 0x02,
+    VerticalFlip        = 0x01,
 }
 
 private void set_databus_read() {
@@ -85,11 +92,36 @@ void lcd_setup(ref ILI9327 lcd) {
   gpio_set(GPIOB, CS);
   gpio_set(GPIOA, CD);
 
+  write_lcd_cmd(CMD_SWRESET); // reset
+  delay(1500); // TODO wait at least 10 frame period.
+  write_lcd_cmd(CMD_SLPOUT); // wake up from sleep
+  delay(500); // must wait >=5ms before another command. >=120ms before sleep again
+
+  // write_lcd_cmd(CMD_DISPOFF);
+  // write_lcd_cmd(CMD_IDMON); // dpy idle mode off
+  // write_lcd_cmd(CMD_DINVOFF); // dpy inverse
+
+  // write_lcd_cmd(CMD_WRCTRLD,0b00101100); // display control settings
+  // write_lcd_cmd(CMD_WRDISBV,0xff); // display brightness
+
+
+  write_lcd_cmd(CMD_MADCTL, AddressMode.ColumnPageOrder | AddressMode.RightToLeft); // memory access control
+  write_lcd_cmd(CMD_PIXSET,0b0000101); //18bits/pixel. RGB 5-6-5
+
+  write_lcd_cmd(CMD_CASET,0x00); // Column Address Set
+  write_lcd_cmd(CMD_PASET,0x00); // Page Address set
+
+  // write_lcd_cmd(CMD_NORON);
+
+  write_lcd_cmd(CMD_DISPON); // display on
+
+  // init done
+
   set_databus_read();
 
 }
 
-private void write_cmd(ubyte cmd, bool isCommand) {
+private void write_lcd(ubyte cmd, bool isCommand) {
 
   if (isCommand)
     gpio_clear(GPIOA, CD);
@@ -124,7 +156,7 @@ private void write_lcd_cmd(ubyte cmd) {
   // select chip
   gpio_clear(GPIOB, CS);
 
-  write_cmd(cmd, true);
+  write_lcd(cmd, true);
 
   // deselect chip
   gpio_set(GPIOB, CS);
@@ -135,9 +167,9 @@ private void write_lcd_cmd(ubyte cmd, ubyte arg1) {
   // select chip
   gpio_clear(GPIOB, CS);
 
-  write_cmd(cmd, true);
+  write_lcd(cmd, true);
 
-  write_cmd(arg1,false);
+  write_lcd(arg1,false);
 
   // deselect chip
   gpio_set(GPIOB, CS);
@@ -147,8 +179,6 @@ private void write_lcd_cmd(ubyte cmd, ubyte arg1) {
 private ubyte read_data() {
 
   gpio_clear(GPIOA,RD);
-
-  delay(1);
 
   // prepare data
   ubyte data = 0;
@@ -171,7 +201,7 @@ private ubyte[6] read_lcd(ubyte cmd) {
   // select chip
   gpio_clear(GPIOB, CS);
 
-  write_cmd(cmd, true);
+  write_lcd(cmd, true);
 
   ubyte[6] codes;
   foreach(i ; 0..6)
@@ -193,59 +223,28 @@ void device_code_read() {
     }
 }
 
-void set_display_off(ref const ILI9327 lcd) {
-    write_lcd_cmd(CMD_SWRESET); // reset
-    //write_lcd_cmd(0xaa);
-    //write_lcd_cmd(0x55);
-    delay(10);
+void clear_display(ref const ILI9327 lcd) {
 
-    write_lcd_cmd(CMD_DISPOFF);
-    //write_lcd_cmd(0x38);
-    write_lcd_cmd(CMD_SLPOUT);
-    delay(10);
-    write_lcd_cmd(CMD_DINVOFF);
 
-//    write_lcd_cmd(0x29);
-    // write_lcd_cmd(0x51,0x00);
 
-    write_lcd_cmd(CMD_WRCTRLD,0b00100100);
-    write_lcd_cmd(CMD_WRDISBV,0xff);
-
-    //write_lcd_cmd(0x10);
-
-    write_lcd_cmd(CMD_MADCTL,ILI_MASK_MADCTL_MX | ILI_MASK_MADCTL_MV);
-    write_lcd_cmd(CMD_PIXSET,0b0000101); //18bits/pixel. RGB 5-6-5
-
-    write_lcd_cmd(CMD_NORON);
-
-    delay(10);
-
-    write_lcd_cmd(CMD_DISPON);
-
-    // init done
-
-    write_lcd_cmd(0x2a,0x00);
-    write_lcd_cmd(0x2b,0x00);
 
     gpio_clear(GPIOB, CS);
-    write_cmd(CMD_RAMWR,true);
-//    write_lcd_cmd(0x2c, true);
-    //RGB-666
+    write_lcd(CMD_RAMWR,true); // Ram Write
+
+    // RGB-666
     // foreach(i; 0..103680) {
-    //     write_cmd(0x3f<<2,false); // B
-    //     write_cmd(0x00<<2,false); // G
-    //     write_cmd(0x3f<<2,false); // R
+    //     write_lcd(0x3f<<2,false); // B
+    //     write_lcd(0x00<<2,false); // G
+    //     write_lcd(0x3f<<2,false); // R
     // }
     // RGB 5-6-5
-    ubyte r = 0x1f; // max = 1f
+    ubyte r = 0x0f; // max = 1f
     ubyte g = 0x3f; // max = 3f
-    ubyte b = 0x00; // max = 1f
+    ubyte b = 0x10; // max = 1f
     // screen size 240x432 = 103680 pixels
     foreach(i; 0..103680) {
-         write_cmd(cast(ubyte)((b & 0x1f) << 5) | ((g&0x3f)>>3),false); // B
-         write_cmd(((g&0x07)<<5) | (r&0x1f),false); // G
+         write_lcd(cast(ubyte)((b & 0x1f) << 5) | ((g&0x3f)>>3),false);
+         write_lcd(((g&0x07)<<5) | (r&0x1f),false);
     }
     gpio_set(GPIOB, CS);
-
-
 }
