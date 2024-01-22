@@ -1,6 +1,7 @@
 module clock;
 
-import stmbridge;
+import libopencm3.stm32.rcc;
+import libopencm3.cm3.systick;
 
 // TODO: system_millis was declared volatile
 

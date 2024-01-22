@@ -1,12 +1,13 @@
 import core.stdc.stdio;
 
-import stmbridge;
+import libopencm3.stm32.rcc;
+
 import io;
 import clock;
 import mcudruntime;
-import button;
 
 import ili9327;
+import lm72a;
 
 ILI9327 lcd;
 
@@ -17,6 +18,20 @@ void gpio_setup()
     rcc_periph_clock_enable(RCC_GPIOC);
 }
 
+struct Color {
+ubyte r;
+ubyte g;
+ubyte b;
+}
+Color[7] cols = [
+  {0x1f,0x3f,0x1f},
+  {0x1f,0x3f,0x00},
+  {0x00,0x3f,0x00},
+  {0x00,0x3f,0x1f},
+  {0x00,0x00,0x1f},
+  {0x1f,0x00,0x1f},
+  {0x1f,0x00,0x00},
+];
 
 extern(C) void main()
 {
@@ -32,11 +47,22 @@ extern(C) void main()
     setupIO();
 
     writeln("Hello world");
+    // TODO: unify setup naming convention
+    init_lm72a();
+    writeln("Temperature: ",read_temp());
+
     lcd_setup(lcd);
 
     device_code_read();
 
-    clear_display(lcd);
+
+    while(true) {
+        // RGB 5-6-5
+        foreach(i; 0..7) {
+            fill_display(cols[i].r,cols[i].g,cols[i].b);
+            delay(10000);
+        }
+    }
 
     writeln("Sent all data");
 

@@ -1,6 +1,8 @@
 module io;
 
-import stmbridge;
+import libopencm3.stm32.rcc;
+import libopencm3.stm32.gpio;
+import libopencm3.stm32.usart;
 
 void setupIO() {
 

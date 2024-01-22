@@ -2,7 +2,7 @@ module ili9327;
 
 import mcudruntime;
 import io;
-import stmbridge;
+import libopencm3.stm32.gpio;
 
 struct ILI9327 {
 }
@@ -237,10 +237,7 @@ void device_code_read() {
     }
 }
 
-void clear_display(ref const ILI9327 lcd) {
-
-
-
+void fill_display(ubyte r,ubyte g, ubyte b) {
 
     gpio_clear(GPIOB, CS);
     write_lcd(CMD_RAMWR,true); // Ram Write
@@ -251,10 +248,10 @@ void clear_display(ref const ILI9327 lcd) {
     //     write_lcd(0x00<<2,false); // G
     //     write_lcd(0x3f<<2,false); // R
     // }
-    // RGB 5-6-5
-    ubyte r = 0x0f; // max = 1f
-    ubyte g = 0x3f; // max = 3f
-    ubyte b = 0x10; // max = 1f
+    // // RGB 5-6-5
+    // ubyte r = 0x0f; // max = 1f
+    // ubyte g = 0x3f; // max = 3f
+    // ubyte b = 0x10; // max = 1f
     // screen size 240x432 = 103680 pixels
     foreach(i; 0..103680) {
          write_lcd(cast(ubyte)((b & 0x1f) << 5) | ((g&0x3f)>>3),false);
