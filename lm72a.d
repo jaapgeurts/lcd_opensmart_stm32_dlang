@@ -38,7 +38,7 @@ enum LM75Conf{
 
 void init_lm72a() {
     rcc_periph_clock_enable(RCC_I2C1); //RCC_I2C1,RCC_I2C2,RCC_I2C3
-    i2c_peripheral_disable(I2C1);
+//    i2c_peripheral_disable(I2C1);
 
     // Set GPIO B8/B9 alternate function to IC2
     gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO8 | GPIO9);
@@ -51,9 +51,12 @@ void init_lm72a() {
     i2c_peripheral_enable(I2C1);
 }
 
-short read_temp() {
+float read_temp() {
     ubyte[2] buf;
     const ubyte t = LM75Register.Temp;
-    i2c_transfer7(I2C1,LM75_I2C_ADDRESS,&t,1,buf.ptr,2);
-    return cast(short)((buf[0] << 8) | buf[1]);
+
+    i2c_transfer7(I2C1,LM75_I2C_ADDRESS,&t,1,buf.ptr,buf.length);
+
+    float adcValue = cast(float)(((buf[0] << 8) | buf[1]) >> 5) / 8.0f;
+    return adcValue;
 }

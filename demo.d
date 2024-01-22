@@ -49,12 +49,15 @@ extern(C) void main()
     writeln("Hello world");
     // TODO: unify setup naming convention
     init_lm72a();
-    writeln("Temperature: ",read_temp());
 
     lcd_setup(lcd);
 
     device_code_read();
 
+    while(true) {
+        writeln("Temperature: ",read_temp());
+        delay(1000);
+    }
 
     while(true) {
         // RGB 5-6-5

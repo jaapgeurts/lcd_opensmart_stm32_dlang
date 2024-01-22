@@ -68,6 +68,8 @@ void writeln(S...)(S args)
     write(args,'\n');
 }
 
+
+enum bool isFloatingPoint(T) = __traits(isFloating, T) && is(T : real);
 enum bool isBoolean(T) = __traits(isUnsigned, T) && is(T : bool);
 enum bool isSomeString(T) = is(immutable T == immutable C[], C) && (is(C == char) || is(C == wchar) || is(C == dchar));
 enum bool isPointer(T) = is(T == U*, U);
@@ -83,6 +85,16 @@ template isIntegral(T)
             && !is(immutable T == immutable bool) && !is(T == __vector);
 }
 
+template isSomeChar(T)
+{
+    static if (!__traits(isUnsigned, T))
+        enum isSomeChar = false;
+    else static if (is(T U == enum))
+        enum isSomeChar = isSomeChar!U;
+    else
+        enum isSomeChar = !__traits(isZeroInit, T);
+}
+
 void write(T...)(T args) {
     foreach (arg; args)
     {
@@ -90,6 +102,9 @@ void write(T...)(T args) {
 
         static if (isSomeString!A)
         {
+            write_uart(arg);
+        }
+        else static if (isSomeChar!A) {
             write_uart(arg);
         }
         else static if (isIntegral!A) {
@@ -102,9 +117,12 @@ void write(T...)(T args) {
         else static if(isPointer!A) {
             write_uart(cast(uint)arg, true);
         }
+        else static if(isFloatingPoint!A) {
+            write_uart(cast(uint)arg);
+        }
         else {
         // TODO: add other types such as char
-            write_uart(arg);
+            static assert(false,"Type not supported by writeln: "~A.stringof);
         }
     }
 }
