@@ -7,7 +7,9 @@ import clock;
 import mcudruntime;
 
 import ili9327;
-import lm72a;
+import lm75a;
+
+import sdcard;
 
 ILI9327 lcd;
 
@@ -47,12 +49,17 @@ extern(C) void main()
     setupIO();
 
     writeln("Hello world");
+
     // TODO: unify setup naming convention
-    init_lm72a();
+//    init_lm72a();
+//    lcd_setup(lcd);
+//    device_code_read();
 
-    lcd_setup(lcd);
-
-    device_code_read();
+    init_sdcard();
+    writeln("SDCard init");
+    while(true) {
+        delay(5000);
+    }
 
     while(true) {
         writeln("Temperature: ",read_temp());

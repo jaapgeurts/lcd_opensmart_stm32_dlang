@@ -17,11 +17,11 @@ else ifeq ($(DC),gdc)
   D_FLAGS_GDC=-fno-pic -march=armv7e-m -mtune=cortex-m4 -mfloat-abi=hard -fno-druntime
 endif
 
-D_FLAGS_COMMON=-g $(D_FLAGS_GDC) $(D_FLAGS_LDC) 
+D_FLAGS_COMMON=-g $(D_FLAGS_GDC) $(D_FLAGS_LDC)
 
 LDSCRIPT=generated.stm32F401re.ld
 
-SRCS = demo.d io.d clock.d mcudruntime.d ili9327.d lm72a.d
+SRCS = demo.d io.d clock.d mcudruntime.d ili9327.d lm75a.d sdcard.d
 #button.d
 OBJS = $(patsubst %.d,%.o,$(SRCS))
 
