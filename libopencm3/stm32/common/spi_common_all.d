@@ -356,7 +356,7 @@ enum SPI_I2SPR_ODD = 1 << 8;
 /* 0 and 1 are forbidden values */
 
 /* --- Function prototypes ------------------------------------------------- */
-
+extern(C) {
 void spi_enable (uint spi);
 void spi_disable (uint spi);
 ushort spi_clean_disable (uint spi);
@@ -400,6 +400,8 @@ void spi_disable_tx_dma (uint spi);
 void spi_enable_rx_dma (uint spi);
 void spi_disable_rx_dma (uint spi);
 void spi_set_standard_mode (uint spi, ubyte mode);
+
+}
 
 /**@}*/
 

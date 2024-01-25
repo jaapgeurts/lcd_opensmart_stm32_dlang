@@ -48,7 +48,7 @@ extern(C) void main()
     gpio_setup();
     setupIO();
 
-    writeln("Hello world");
+    writeln("STM32F401RE Dlang LibOpenCM3 demo");
 
     // TODO: unify setup naming convention
 //    init_lm72a();
@@ -56,9 +56,8 @@ extern(C) void main()
 //    device_code_read();
 
     init_sdcard();
-    writeln("SDCard init");
     while(true) {
-        delay(5000);
+       delay(5000);
     }
 
     while(true) {

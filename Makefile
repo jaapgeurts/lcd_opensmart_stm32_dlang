@@ -36,7 +36,7 @@ all: demo
 link: $(LDSCRIPT)
 
 demo: $(LDSCRIPT) $(OBJS)
-	$(LD) $(OBJS) --gc-sections -L $(OPENCM3_DIR)/lib/ -lopencm3_stm32f4 -T stm32f401re.ld -o $@.elf
+	$(LD) $(OBJS) --gc-sections -L $(OPENCM3_DIR)/lib/ -lopencm3_stm32f4 -z noexecstack -T stm32f401re.ld -o $@.elf
 
 %.o: %.d
 	$(DC) $(D_FLAGS_COMMON) -c $<
