@@ -97,29 +97,6 @@ ubyte sdcard_read() {
     return cast(ubyte)spi_read(SPI3);
 }
 
-// // read
-// ubyte sdcard_poll_result() {
-//     ubyte i = 8;
-//     ubyte r;
-//     do {
-//         r = sdcard_xfer(0xff);
-//         i--;
-//     } while(r == 0xff && i > 0);
-//
-//     return r;
-// }
-//
-// // Blocking write
-// void sdcard_send(ubyte data) {
-//   spi_send(SPI3,data);
-// }
-//
-// // blocking write
-// void sdcard_send(ubyte[6] data) {
-//     foreach(b; data)
-//         spi_send(SPI3,b);
-// }
-
 private void init_spi() {
     rcc_periph_clock_enable(RCC_GPIOB|RCC_GPIOC);
     rcc_periph_clock_enable(RCC_SPI3);
@@ -173,20 +150,18 @@ void init_sdcard() {
     gpio_clear(GPIOB,SDCARD_CS);
     sdcard_send(0xff);
 
-    // CMD0 (go to idle state)
+    // CMD0::r1 (go to idle state)
     sdcard_send_cmd(SDCardCommand.CMD0,0);
     ubyte r = sdcard_read_r1();
-    sdcard_send(0xff);
     writeln("done: ",cast(ushort)r);
 
-    // CMD8 (interface condition)
+    // CMD8::r3 (interface condition)
     sdcard_send_cmd(SDCardCommand.CMD8,0x01AA);
     write("cmd8: ");
     uint trail;
     r = sdcard_read_r3r7(trail);
     write(cast(ushort)r,",");
     writeln(trail);
-    sdcard_send(0xff);
     writeln();
 
     // // CMD58 (read OCR)
@@ -200,7 +175,7 @@ void init_sdcard() {
     // writeln();
 
     do {
-        // CMD55:R1 (next cmd is app specific)
+        // CMD55::R1 (next cmd is app specific)
         sdcard_send_cmd(SDCardCommand.CMD55,0);
         r = sdcard_read_r1();
         // ACMD41:R1 (send operation condition)
@@ -211,15 +186,14 @@ void init_sdcard() {
     writeln("Ready");
 
 
-    // // CMD58:R3 (read OCR)
+    // // CMD58::R3 (read OCR)
     sdcard_send_cmd(SDCardCommand.CMD58,0);
     write("cmd58: ");
     r = sdcard_read_r3r7(trail);
     write(cast(ushort)r,",");
     writeln(trail);
-    sdcard_send(0xff);
 
-    // CMD17 (read single block)
+    // CMD17:address:R1 (read single block)
     sdcard_send_cmd(SDCardCommand.CMD17,0);
     write("cmd17: ");
     r = sdcard_read_r1();
@@ -234,11 +208,15 @@ void init_sdcard() {
             r = sdcard_xfer(0xff);
             write(cast(ushort)r,' ');
           }
+          // read 16 bit CRC but ignore for now
+          sdcard_xfer(0xff);
+          sdcard_xfer(0xff);
         }
     }
-    sdcard_send(0xff);// finish the last transaction
 
+    sdcard_send(0xff);// finish the last transaction
     gpio_set(GPIOB,SDCARD_CS); // set CS high
+    sdcard_send(0xff);
 
     writeln("Init SDCard finished.");
 
