@@ -21,7 +21,7 @@ D_FLAGS_COMMON=-g $(D_FLAGS_GDC) $(D_FLAGS_LDC)
 
 LDSCRIPT=generated.stm32F401re.ld
 
-SRCS = demo.d io.d clock.d mcudruntime.d ili9327.d lm75a.d sdcard.d
+SRCS = demo.d io.d clock.d mcudruntime.d ili9327.d lm75a.d sdcard.d crc7.d
 #button.d
 OBJS = $(patsubst %.d,%.o,$(SRCS))
 
