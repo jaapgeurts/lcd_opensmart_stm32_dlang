@@ -1,3 +1,8 @@
+/* ILI 9327 driver
+
+ * screen size 240x432 = 103680 pixels
+
+*/
 module ili9327;
 
 import mcudruntime;
@@ -25,8 +30,8 @@ private enum  {
     SD_CS = GPIO4, // B
 }
 
-// TODO: change to Named enum
-enum {
+// TODO: change to Named enum ILI9327Command
+enum  {
     CMD_SWRESET  = 0x01,
     CMD_SLPIN    = 0x10,
     CMD_SLPOUT   = 0x11,
@@ -49,6 +54,7 @@ enum {
     CMD_WRCTRLD  = 0x53,
     CMD_RDCODE   = 0xef,
 }
+
 // TODO: change to Named enum
 enum AddressMode {
     BottomToTop         = 0x08, // default is TopToBottom
@@ -213,9 +219,10 @@ private ubyte read_data() {
 
 private ubyte[6] read_lcd(ubyte cmd) {
   // select chip
-  gpio_clear(GPIOB, CS);
 
   write_lcd(cmd, true);
+
+  gpio_clear(GPIOB, CS);
 
   ubyte[6] codes;
   foreach(i ; 0..6)
@@ -237,6 +244,49 @@ void device_code_read() {
     }
 }
 
+void start_write() {
+
+
+    // // Column Address Set
+    // gpio_clear(GPIOB, CS);
+    // write_lcd(CMD_CASET,true);
+    // write_lcd(0,false);
+    // write_lcd(0,false);
+    // write_lcd(1,false);
+    // write_lcd(0xff,false);
+    // // gpio_set(GPIOB, CS);
+    //
+    //
+    // // Page Address set
+    // // gpio_clear(GPIOB, CS);
+    // write_lcd(CMD_PASET,true);
+    // write_lcd(0,false);
+    // write_lcd(0,false);
+    // write_lcd(1,false);
+    // write_lcd(0xff,false);
+    // gpio_set(GPIOB, CS);
+    //
+    gpio_clear(GPIOB, CS);
+     write_lcd(CMD_RAMWR,true); // Ram Write
+    //
+    // delay(10);
+
+
+}
+// RGB 5-6-5
+void send_pixel(ubyte r,ubyte g, ubyte b) {
+    b = b >> 3;
+    g = g >> 2;
+    r = r >> 3;
+    write_lcd((((b & 0x1f) << 3) | ((g&0x3f)>>3)),false);
+    write_lcd(((g&0x07)<<5) | (r&0x1f),false);
+}
+
+void end_write() {
+    gpio_set(GPIOB, CS);
+
+}
+
 void fill_display(ubyte r,ubyte g, ubyte b) {
 
     gpio_clear(GPIOB, CS);
@@ -254,7 +304,7 @@ void fill_display(ubyte r,ubyte g, ubyte b) {
     // ubyte b = 0x10; // max = 1f
     // screen size 240x432 = 103680 pixels
     foreach(i; 0..103680) {
-         write_lcd(cast(ubyte)((b & 0x1f) << 5) | ((g&0x3f)>>3),false);
+         write_lcd(cast(ubyte)((b & 0x1f) << 3) | ((g&0x3f)>>3),false);
          write_lcd(((g&0x07)<<5) | (r&0x1f),false);
     }
     gpio_set(GPIOB, CS);

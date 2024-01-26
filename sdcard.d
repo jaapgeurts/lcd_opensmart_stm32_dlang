@@ -88,6 +88,7 @@ ubyte sdcard_read_r3r7(ref uint resp) {
 }
 
 ubyte sdcard_xfer(ubyte data) {
+    // This line doesn't work.
     // return cast(ubyte)spi_xfer(SPI3,data);
     sdcard_send(data); // send a to trigger the next response
     return cast(ubyte)spi_read(SPI3);
@@ -145,10 +146,7 @@ void init_sdcard() {
         sdcard_send(0xff);
     }
 
-    sdcard_send(0xff);
-    // pull CS low (active low)
-    gpio_clear(GPIOB,SDCARD_CS);
-    sdcard_send(0xff);
+    sdcard_select();
 
     // CMD0::r1 (go to idle state)
     sdcard_send_cmd(SDCardCommand.CMD0,0);
@@ -160,19 +158,9 @@ void init_sdcard() {
     write("cmd8: ");
     uint trail;
     r = sdcard_read_r3r7(trail);
-    write(cast(ushort)r,",");
+    write(cast(ushort)r,',');
     writeln(trail);
     writeln();
-
-    // // CMD58 (read OCR)
-    // data = [0x7A, 0x00, 0x00, 0x00, 0x00, 0xFD];
-    // sdcard_send(data);
-    // write("cmd58: ");
-    // do {
-    //     r = sdcard_read();
-    //     write(cast(ushort)r,',');
-    // } while (r != 0xff);
-    // writeln();
 
     do {
         // CMD55::R1 (next cmd is app specific)
@@ -190,23 +178,54 @@ void init_sdcard() {
     sdcard_send_cmd(SDCardCommand.CMD58,0);
     write("cmd58: ");
     r = sdcard_read_r3r7(trail);
-    write(cast(ushort)r,",");
+    write(cast(ushort)r,',');
     writeln(trail);
 
+
+
+    sdcard_release();
+
+    writeln("Init SDCard finished.");
+
+
+}
+
+private void sdcard_release()
+{
+    sdcard_send(0xff);// finish the last transaction
+    gpio_set(GPIOB,SDCARD_CS); // set CS high
+    sdcard_send(0xff);
+}
+
+private void sdcard_select()
+{
+    sdcard_send(0xff);// finish the last transaction
+    gpio_clear(GPIOB,SDCARD_CS); // set CS high
+    sdcard_send(0xff);
+
+}
+
+void sdcard_readblock(uint addr, ref ubyte[512] buf) {
+
+
+    // connect SPI
+
+    sdcard_select();
+
     // CMD17:address:R1 (read single block)
-    sdcard_send_cmd(SDCardCommand.CMD17,0);
-    write("cmd17: ");
-    r = sdcard_read_r1();
+    sdcard_send_cmd(SDCardCommand.CMD17,addr);
+    //write("cmd17: ");
+    ubyte r = sdcard_read_r1();
     if (r != 0xff) {
         do {
             r = sdcard_xfer(0xff);
             // wait for start marker
         } while (r == 0xff);
         if (r == 0xfe) {
-          writeln("Block:");
+          //writeln("Block:");
           foreach(i;0..512) {
-            r = sdcard_xfer(0xff);
-            write(cast(ushort)r,' ');
+            buf[i] = sdcard_xfer(0xff);
+            //write(cast(ushort)buf[i],' ');
           }
           // read 16 bit CRC but ignore for now
           sdcard_xfer(0xff);
@@ -214,13 +233,9 @@ void init_sdcard() {
         }
     }
 
-    sdcard_send(0xff);// finish the last transaction
-    gpio_set(GPIOB,SDCARD_CS); // set CS high
-    sdcard_send(0xff);
+    sdcard_release();
 
-    writeln("Init SDCard finished.");
-
-
+    // disconnect SPI
 }
 
 

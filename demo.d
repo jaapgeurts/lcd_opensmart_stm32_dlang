@@ -20,6 +20,8 @@ void gpio_setup()
     rcc_periph_clock_enable(RCC_GPIOC);
 }
 
+ubyte[512] buf;
+
 struct Color {
 ubyte r;
 ubyte g;
@@ -52,10 +54,20 @@ extern(C) void main()
 
     // TODO: unify setup naming convention
 //    init_lm72a();
-//    lcd_setup(lcd);
-//    device_code_read();
+    lcd_setup(lcd);
+    device_code_read();
 
     init_sdcard();
+
+    start_write();
+    foreach(j; 0..810) {
+        sdcard_readblock(j,buf);
+        foreach(i; 0..128) {
+            send_pixel(buf[i*4],buf[i*4+1],buf[i*4+2]);
+        }
+    }
+    end_write();
+    writeln("Loaded");
     while(true) {
        delay(5000);
     }
