@@ -262,6 +262,9 @@ DRESULT disk_readp (ubyte* buff, uint sector, uint offset, uint count)
 {
     sdcard_select();
 
+    if (count > 512)
+        writeln("read size larger than buf: ", count);
+
     // CMD17:address:R1 (read single block)
     sdcard_send_cmd(SDCardCommand.CMD17,sector);
     //write("cmd17: ");

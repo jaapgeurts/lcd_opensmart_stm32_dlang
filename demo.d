@@ -22,12 +22,14 @@ void gpio_setup()
     rcc_periph_clock_enable(RCC_GPIOC);
 }
 
+
 ubyte[512] buf;
 
+
 struct Color {
-ubyte r;
-ubyte g;
-ubyte b;
+    ubyte r;
+    ubyte g;
+    ubyte b;
 }
 Color[7] cols = [
   {0x1f,0x3f,0x1f},
@@ -39,12 +41,16 @@ Color[7] cols = [
   {0x1f,0x00,0x00},
 ];
 
+FRESULT rc;
+__gshared DIR dir;
+FILINFO fno;
 
-void read_dir() {
-    FATFS fatfs;
-    DIR dir;
-    FRESULT rc;
-    FILINFO fno;
+
+char* cur_file;
+
+FATFS fatfs;
+void open_card(DIR* dir) {
+
 
     writeln("Mounting SDcard");
 
@@ -55,28 +61,29 @@ void read_dir() {
     }
 
     // open root dir
-    rc = pf_opendir(&dir, "");
+    rc = pf_opendir(dir, "".ptr);
     if (rc) {
         writeln("failed open dir: ",rc);
         return;
     }
 
-    writeln("Reading dir");
-	while(true) {
-		rc = pf_readdir(&dir, &fno);	/* Read a directory item */
-		if (rc || fno.fname[0] == 0) {
-            writeln("Nothing: ", rc);
-            break;	/* Error or end of dir */
-        }
-		if (fno.fattrib & AM_DIR)
-			writeln("* ",cast(string)(fno.fname[0..strlen(&fno.fname[0])]));
-		else
-            writeln("  ",cast(string)(fno.fname[0..strlen(&fno.fname[0])]),":",fno.fsize);
-	}
-	if (rc) {
-        writeln("Failure: ", rc);
-        return;
-	}
+    writeln("Dir open");
+}
+
+void next_dir(DIR* dir) {
+
+    rc = pf_readdir(dir, &fno);	/* Read a directory item */
+    if (rc || fno.fname[0] == 0) {
+        writeln("Nothing: ", rc);
+        return;	/* Error or end of dir */
+    }
+    if (!(fno.fattrib & AM_DIR)) {
+         int len = strlen(&fno.fname[0]);
+        // cur_file[0..len] = fno.fname[0..len];
+        writeln(cast(string)(fno.fname[0..len]),':',fno.fsize);
+        cur_file = &fno.fname[0];
+
+    }
 }
 
 extern(C) void main()
@@ -84,8 +91,6 @@ extern(C) void main()
 
     rt_start();
 
-    // string a;
-    // a ~= "a";
     clock_setup();
     systick_setup();
 
@@ -101,16 +106,46 @@ extern(C) void main()
 
     init_sdcard();
 
-    read_dir();
+    open_card(&dir);
+    // next_dir(&dir);
+    // next_dir(&dir);
+    // next_dir(&dir);
+    // next_dir(&dir);
+    string[3] names = ["LEAF.RAW", "EAGLE.RAW","BEACHB~1.RAW"];
+    while(true)
+    {
+        foreach(name; names) {
+            writeln(name);
+            rc = pf_open(name.ptr);
+            if (rc) {
+                writeln("failed open file: ",rc);
+                continue;
+            }
 
-    start_write();
-    foreach(j; 0..810) { // 810 blocks of 512 bytes
-        sdcard_readblock(j,buf);
-        foreach(i; 0..128) { // data is RGBA (128*4 = 512)
-            send_pixel(buf[i*4],buf[i*4+1],buf[i*4+2]);
+            start_write();
+            foreach(j; 0..810) { // 810 blocks of 512 bytes
+                uint res;
+                pf_read(buf.ptr,512, &res);
+                //sdcard_readblock(j,buf);
+                foreach(i; 0..128) { // data is RGBA (128*4 = 512)
+                    send_pixel(buf[i*4],buf[i*4+1],buf[i*4+2]);
+                }
+            }
+            end_write();
+
+            delay(10000);
         }
     }
-    end_write();
+
+
+    // start_write();
+    // foreach(j; 0..810) { // 810 blocks of 512 bytes
+    //     sdcard_readblock(j,buf);
+    //     foreach(i; 0..128) { // data is RGBA (128*4 = 512)
+    //         send_pixel(buf[i*4],buf[i*4+1],buf[i*4+2]);
+    //     }
+    // }
+    // end_write();
     writeln("Loaded");
     while(true) {
        delay(5000);

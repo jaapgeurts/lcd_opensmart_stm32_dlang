@@ -111,7 +111,7 @@ void lcd_setup(ref ILI9327 lcd) {
   // write_lcd_cmd(CMD_WRCTRLD,0b00101100); // display control settings
   // write_lcd_cmd(CMD_WRDISBV,0xff); // display brightness
 
-  write_lcd_cmd(CMD_MADCTL, AddressMode.ColumnPageOrder | AddressMode.RightToLeft); // memory access control
+  write_lcd_cmd(CMD_MADCTL, AddressMode.ColumnPageOrder | AddressMode.RightToLeft | AddressMode.VerticalFlip); // memory access control
   write_lcd_cmd(CMD_PIXSET,0b0000101); //18bits/pixel. RGB 5-6-5
 
   // Column Address Set

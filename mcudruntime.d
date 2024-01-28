@@ -44,6 +44,14 @@ extern(C) void* memcpy(ubyte* a, ubyte* b, size_t n) {
     return t;
 }
 
+extern(C) void _d_array_slice_copy(ubyte* dst, size_t dstlen, ubyte* src, size_t srclen, size_t elemsz) {
+    // import ldc.intrinsics;
+    // llvm_memcpy!size_t(dst,src,dstlen*elemsz,0);
+    for (int i=0;i<srclen*elemsz; i++) {
+      *dst++ = *src++;
+    }
+}
+
 extern (C) void *memset(ubyte*p, int c, size_t n)
 {
     ubyte* t = p;
