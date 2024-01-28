@@ -37,10 +37,18 @@ extern(C) noreturn __assert(const(char)* msg, const(char)* file, int line) {
         continue;
 }
 
-extern(C) void* memcpy(byte* a, byte* b, size_t n) {
-    byte* t = a;
+extern(C) void* memcpy(ubyte* a, ubyte* b, size_t n) {
+    ubyte* t = a;
     for(int i=0;i<n;i++)
         *a++ = *b++;
+    return t;
+}
+
+extern (C) void *memset(ubyte*p, int c, size_t n)
+{
+    ubyte* t = p;
+    for(int i=0;i<n;i++)
+        *p++ = cast(ubyte)c;
     return t;
 }
 

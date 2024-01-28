@@ -15,6 +15,8 @@ import mcudruntime;
 import io;
 import crc7;
 
+import diskio;
+
 import libopencm3.stm32.rcc;
 import libopencm3.stm32.gpio;
 import libopencm3.stm32.spi;
@@ -182,6 +184,12 @@ void init_sdcard() {
     writeln(trail);
 
 
+    // setblocksize to 512
+    // prolly already was 512
+    // sdcard_send_cmd(SDCardCommand.CMD16,512);
+    // write("cmd16: ");
+    // r = sdcard_read_r1();
+    // writeln(cast(ushort)r);
 
     sdcard_release();
 
@@ -238,4 +246,57 @@ void sdcard_readblock(uint addr, ref ubyte[512] buf) {
     // disconnect SPI
 }
 
+
+
+//********************************
+// FAT functions
+
+extern (C) {
+
+DSTATUS disk_initialize ()
+{
+    return RES_OK;
+}
+
+DRESULT disk_readp (ubyte* buff, uint sector, uint offset, uint count)
+{
+    sdcard_select();
+
+    // CMD17:address:R1 (read single block)
+    sdcard_send_cmd(SDCardCommand.CMD17,sector);
+    //write("cmd17: ");
+    ubyte r = sdcard_read_r1();
+    if (r != 0xff) {
+        do {
+            r = sdcard_xfer(0xff);
+            // wait for start marker
+        } while (r == 0xff);
+        if (r == 0xfe) {
+            uint skip = 514-offset - count;
+            foreach(i;0..offset)
+                sdcard_xfer(0xff); // skip bytes
+            foreach(i;0..count) {
+                buff[i] = sdcard_xfer(0xff);
+                //write(cast(ushort)buf[i],' ');
+            }
+            // read 16 bit CRC but ignore for now
+            foreach(i;0..skip)
+                sdcard_xfer(0xff);
+            // sdcard_xfer(0xff);
+            // sdcard_xfer(0xff);
+            // sdcard_xfer(0xff);
+        }
+    }
+
+    sdcard_release();
+
+    return RES_OK;
+}
+
+DRESULT disk_writep (const(ubyte)* buff, uint sc)
+{
+    return RES_ERROR;
+}
+
+}
 

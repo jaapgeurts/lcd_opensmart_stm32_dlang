@@ -11,6 +11,8 @@ import lm75a;
 
 import sdcard;
 
+import pff;
+
 ILI9327 lcd;
 
 void gpio_setup()
@@ -37,6 +39,46 @@ Color[7] cols = [
   {0x1f,0x00,0x00},
 ];
 
+
+void read_dir() {
+    FATFS fatfs;
+    DIR dir;
+    FRESULT rc;
+    FILINFO fno;
+
+    writeln("Mounting SDcard");
+
+    rc = pf_mount(&fatfs);
+    if (rc) {
+        writeln("failed mounting: ", rc);
+        return;
+    }
+
+    // open root dir
+    rc = pf_opendir(&dir, "");
+    if (rc) {
+        writeln("failed open dir: ",rc);
+        return;
+    }
+
+    writeln("Reading dir");
+	while(true) {
+		rc = pf_readdir(&dir, &fno);	/* Read a directory item */
+		if (rc || fno.fname[0] == 0) {
+            writeln("Nothing: ", rc);
+            break;	/* Error or end of dir */
+        }
+		if (fno.fattrib & AM_DIR)
+			writeln("* ",cast(string)(fno.fname[0..strlen(&fno.fname[0])]));
+		else
+            writeln("  ",cast(string)(fno.fname[0..strlen(&fno.fname[0])]),":",fno.fsize);
+	}
+	if (rc) {
+        writeln("Failure: ", rc);
+        return;
+	}
+}
+
 extern(C) void main()
 {
 
@@ -59,10 +101,12 @@ extern(C) void main()
 
     init_sdcard();
 
+    read_dir();
+
     start_write();
-    foreach(j; 0..810) {
+    foreach(j; 0..810) { // 810 blocks of 512 bytes
         sdcard_readblock(j,buf);
-        foreach(i; 0..128) {
+        foreach(i; 0..128) { // data is RGBA (128*4 = 512)
             send_pixel(buf[i*4],buf[i*4+1],buf[i*4+2]);
         }
     }
