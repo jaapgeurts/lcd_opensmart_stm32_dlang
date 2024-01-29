@@ -29,12 +29,12 @@ void systick_setup()
 {
 	/* clock rate / 1000 to get 1mS interrupt rate */
 	systick_set_reload(84000);
-	systick_set_clocksource(1 << STK_CSR_CLKSOURCE_LSB);
+	systick_set_clocksource(STK_CSR_CLKSOURCE_AHB);
 
-	systick_interrupt_enable();
-
-	/* this done last */
 	systick_counter_enable();
+
+	/* swap counter with interrupt?*/
+	systick_interrupt_enable();
 }
 
 /* Set STM32 to 84 MHz. */

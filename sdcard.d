@@ -183,6 +183,9 @@ void init_sdcard() {
     write(cast(ushort)r,',');
     writeln(trail);
 
+    // set baudrate faster: 84Mhz / 4 =~ 21 MHz
+
+    spi_set_baudrate_prescaler(SPI3,SPI_CR1_BAUDRATE_FPCLK_DIV_4); //
 
     // setblocksize to 512
     // prolly already was 512

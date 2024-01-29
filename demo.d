@@ -100,7 +100,7 @@ extern(C) void main()
     writeln("STM32F401RE Dlang LibOpenCM3 demo");
 
     // TODO: unify setup naming convention
-//    init_lm72a();
+    init_lm72a();
     lcd_setup(lcd);
     device_code_read();
 
@@ -111,11 +111,26 @@ extern(C) void main()
     // next_dir(&dir);
     // next_dir(&dir);
     // next_dir(&dir);
-    string[3] names = ["LEAF.RAW", "EAGLE.RAW","BEACHB~1.RAW"];
+    string[117] names = ["LEAF.RAW", "EAGLE.RAW","BEACHB~1.RAW",
+    "000.RAW", "001.RAW","002.RAW","003.RAW","004.RAW",
+    "005.RAW","006.RAW","007.RAW","008.RAW","009.RAW","010.RAW","011.RAW","012.RAW",
+    "013.RAW","014.RAW","015.RAW","016.RAW","017.RAW","018.RAW","019.RAW","020.RAW",
+    "021.RAW","022.RAW","023.RAW","024.RAW","025.RAW","026.RAW","027.RAW","028.RAW",
+    "029.RAW","030.RAW","031.RAW","032.RAW","033.RAW","034.RAW","035.RAW","036.RAW",
+    "037.RAW","038.RAW","039.RAW","040.RAW","041.RAW","042.RAW","043.RAW","044.RAW",
+    "045.RAW","046.RAW","047.RAW","048.RAW","049.RAW","050.RAW","051.RAW","052.RAW",
+    "053.RAW","054.RAW","055.RAW","056.RAW","057.RAW","058.RAW","059.RAW","060.RAW",
+    "061.RAW","062.RAW","063.RAW","064.RAW","065.RAW","066.RAW","067.RAW","068.RAW",
+    "069.RAW","070.RAW","071.RAW","072.RAW","073.RAW","074.RAW","075.RAW","076.RAW",
+    "077.RAW","078.RAW","079.RAW","080.RAW","081.RAW","082.RAW","083.RAW","084.RAW",
+    "085.RAW","086.RAW","087.RAW","088.RAW","089.RAW","090.RAW","091.RAW","092.RAW",
+    "093.RAW","094.RAW","095.RAW","096.RAW","097.RAW","098.RAW","099.RAW","100.RAW",
+    "101.RAW","102.RAW","103.RAW","104.RAW","105.RAW","106.RAW","107.RAW","108.RAW",
+    "109.RAW","110.RAW","111.RAW","112.RAW","113.RAW" ];
     while(true)
     {
         foreach(name; names) {
-            writeln(name);
+            write(name);
             rc = pf_open(name.ptr);
             if (rc) {
                 writeln("failed open file: ",rc);
@@ -132,8 +147,10 @@ extern(C) void main()
                 }
             }
             end_write();
+            writeln(" loaded.");
+            writeln("Temperature: ",read_temp());
 
-            delay(10000);
+            msleep(8000);
         }
     }
 
@@ -148,19 +165,19 @@ extern(C) void main()
     // end_write();
     writeln("Loaded");
     while(true) {
-       delay(5000);
+       msleep(5000);
     }
 
     while(true) {
         writeln("Temperature: ",read_temp());
-        delay(1000);
+        msleep(1000);
     }
 
     while(true) {
         // RGB 5-6-5
         foreach(i; 0..7) {
             fill_display(cols[i].r,cols[i].g,cols[i].b);
-            delay(10000);
+            msleep(10000);
         }
     }
 

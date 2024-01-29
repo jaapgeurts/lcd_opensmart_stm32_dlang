@@ -87,7 +87,7 @@ void lcd_setup(ref ILI9327 lcd) {
   gpio_mode_setup(GPIOB,GPIO_MODE_OUTPUT,GPIO_PUPD_NONE, CS);
 
   // GPIO_OSPEED_2MHZ GPIO_OSPEED_50MHZ GPIO_OSPEED_100MHZ
-  // Doesn't seem to have any speed increase effect.
+  // Doesn't any speed increase effect. (changes edge speed)
   // gpio_set_output_options(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, D0 | D3 | D5 | D7 | RD | WR | CD);
   // gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, D2 | D4 | D6 | CS);
   // gpio_set_output_options(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, D1);
@@ -150,15 +150,49 @@ private void write_lcd(ubyte cmd, bool isCommand) {
 
   gpio_clear(GPIOA,WR);
 
+  /*
+    D0 = GPIO9,   // A
+    D7 = GPIO8,   // A
+    D3 = GPIO7,   // A
+    D5 = GPIO5,   // A
+
+    D6 = GPIO10,  // B
+    D2 = GPIO6,   // B
+    D4 = GPIO5,   // B
+
+    D1 = GPIO7,   // C
+    */
+  //import core.volatile;
+
+
+  // cmd & 0x01 ? gpio_set(GPIOA, D0) : gpio_clear(GPIOA,D0);
+  // cmd & 0x08 ? gpio_set(GPIOA, D3) : gpio_clear(GPIOA,D3);
+  // cmd & 0x20 ? gpio_set(GPIOA, D5) : gpio_clear(GPIOA,D5);
+  // cmd & 0x80 ? gpio_set(GPIOA, D7) : gpio_clear(GPIOA,D7);
+
   // prepare data
-  cmd & 0x01 ? gpio_set(GPIOA, D0) : gpio_clear(GPIOA,D0);
+  uint val = volatileLoad(GPIOA_ODR);
+  val &= ~(D0|D3|D5|D7);
+  // val |= (cmd<<9); // to bit 9
+  // val |= ((cmd&0x08)<<4); //  to  bit 7
+  // val |= (cmd&0x20); // to  bit 5
+  // val |= ((cmd&0x80)<<1); // to  bit 8
+  val |= (cmd<<9) | ((cmd&0x08)<<4) | (cmd&0x20) | ((cmd&0x80)<<1);
+  volatileStore(GPIOA_ODR, val);
+
+  // cmd & 0x04 ? gpio_set(GPIOB, D2) : gpio_clear(GPIOB,D2);
+  // cmd & 0x10 ? gpio_set(GPIOB, D4) : gpio_clear(GPIOB,D4);
+  // cmd & 0x40 ? gpio_set(GPIOB, D6) : gpio_clear(GPIOB,D6);
+
+  val = volatileLoad(GPIOB_ODR);
+  val &= ~(D2 | D4 | D6);
+  // val |= ((cmd & 0x04 ) << 4); // to bit 6
+  // val |= ((cmd & 0x10 ) << 1); // to bit 5
+  // val |= ((cmd & 0x40 ) << 4); // to bit 10
+  val |= ((cmd & 0x04 ) << 4) | ((cmd & 0x10 ) << 1) | ((cmd & 0x40 ) << 4);
+  volatileStore(GPIOB_ODR, val);
+
   cmd & 0x02 ? gpio_set(GPIOC, D1) : gpio_clear(GPIOC,D1);
-  cmd & 0x04 ? gpio_set(GPIOB, D2) : gpio_clear(GPIOB,D2);
-  cmd & 0x08 ? gpio_set(GPIOA, D3) : gpio_clear(GPIOA,D3);
-  cmd & 0x10 ? gpio_set(GPIOB, D4) : gpio_clear(GPIOB,D4);
-  cmd & 0x20 ? gpio_set(GPIOA, D5) : gpio_clear(GPIOA,D5);
-  cmd & 0x40 ? gpio_set(GPIOB, D6) : gpio_clear(GPIOB,D6);
-  cmd & 0x80 ? gpio_set(GPIOA, D7) : gpio_clear(GPIOA,D7);
 
   //delay(1);
   // Latch data on write returns to high.
@@ -201,6 +235,7 @@ private ubyte read_data() {
   gpio_clear(GPIOA,RD);
 
   // prepare data
+  // TODO: convert to volatileRead
   ubyte data = 0;
   if (gpio_get(GPIOA,D0)) data |= 0x01;
   if (gpio_get(GPIOC,D1)) data |= 0x02;
