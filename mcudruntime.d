@@ -37,28 +37,32 @@ extern(C) noreturn __assert(const(char)* msg, const(char)* file, int line) {
         continue;
 }
 
-extern(C) void* memcpy(ubyte* a, ubyte* b, size_t n) {
-    ubyte* t = a;
-    for(int i=0;i<n;i++)
-        *a++ = *b++;
-    return t;
-}
-
-extern(C) void _d_array_slice_copy(ubyte* dst, size_t dstlen, ubyte* src, size_t srclen, size_t elemsz) {
+extern(C) void* memcpy(ubyte* dst, ubyte* src, size_t n) {
     // import ldc.intrinsics;
-    // llvm_memcpy!size_t(dst,src,dstlen*elemsz,0);
-    for (int i=0;i<srclen*elemsz; i++) {
-      *dst++ = *src++;
-    }
-}
-
-extern (C) void *memset(ubyte*p, int c, size_t n)
-{
-    ubyte* t = p;
+    // llvm_memcpy!size_t(dst,src,n,0);
+// TODO: use LLVM intrinsics
+    ubyte* t = dst;
     for(int i=0;i<n;i++)
-        *p++ = cast(ubyte)c;
+        *dst++ = *src++;
     return t;
 }
+
+// extern(C) void _d_array_slice_copy(ubyte* dst, size_t dstlen, ubyte* src, size_t srclen, size_t elemsz) {
+//     // import ldc.intrinsics;
+//     // llvm_memcpy!size_t(dst,src,dstlen*elemsz,0);
+//     for (int i=0;i<srclen*elemsz; i++) {
+//       *dst++ = *src++;
+//     }
+// }
+
+// extern (C) void *memset(ubyte*p, int c, size_t n)
+// {
+// // TODO: use LLVM intrinsics
+//     ubyte* t = p;
+//     for(int i=0;i<n;i++)
+//         *p++ = cast(ubyte)c;
+//     return t;
+// }
 
 void delay(int f)
 {

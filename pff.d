@@ -31,7 +31,7 @@ extern (C) {
 
 struct FATFS
 {
-//align (1):
+// align (1):
     ubyte fs_type; /* FAT sub type */
     ubyte flag; /* File status flags */
     ubyte csize; /* Number of sectors per cluster */
@@ -64,7 +64,7 @@ struct DIR
 
 struct FILINFO
 {
-//align (1):
+// align (1):
     uint fsize; /* File size */
     ushort fdate; /* Last modified date */
     ushort ftime; /* Last modified time */

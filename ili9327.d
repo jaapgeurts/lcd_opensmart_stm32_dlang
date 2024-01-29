@@ -9,9 +9,6 @@ import mcudruntime;
 import io;
 import libopencm3.stm32.gpio;
 
-struct ILI9327 {
-}
-
 private enum  {
     D0 = GPIO9,   // A
     D1 = GPIO7,   // C
@@ -80,7 +77,7 @@ private void set_databus_write() {
   gpio_mode_setup(GPIOC,GPIO_MODE_OUTPUT,GPIO_PUPD_PULLUP, D1 );
 }
 
-void lcd_setup(ref ILI9327 lcd) {
+void lcd_setup() {
 
   // set port to write
   gpio_mode_setup(GPIOA,GPIO_MODE_OUTPUT,GPIO_PUPD_NONE, RD | WR | CD );
@@ -148,6 +145,16 @@ private void write_lcd(ubyte cmd, bool isCommand) {
 
   set_databus_write();
 
+  send_lcd_data(cmd);
+
+      // back to high impedence
+  set_databus_read();
+
+  gpio_set(GPIOA,CD);
+
+}
+private void send_lcd_data(ubyte cmd) {
+
   gpio_clear(GPIOA,WR);
 
   /*
@@ -199,10 +206,7 @@ private void write_lcd(ubyte cmd, bool isCommand) {
   gpio_set(GPIOA,WR);
   //delay(1);
 
-    // back to high impedence
-  set_databus_read();
 
-  gpio_set(GPIOA,CD);
 
 }
 
@@ -281,52 +285,36 @@ void device_code_read() {
 
 void start_write() {
 
-
-    // // Column Address Set
-    // gpio_clear(GPIOB, CS);
-    // write_lcd(CMD_CASET,true);
-    // write_lcd(0,false);
-    // write_lcd(0,false);
-    // write_lcd(1,false);
-    // write_lcd(0xff,false);
-    // // gpio_set(GPIOB, CS);
-    //
-    //
-    // // Page Address set
-    // // gpio_clear(GPIOB, CS);
-    // write_lcd(CMD_PASET,true);
-    // write_lcd(0,false);
-    // write_lcd(0,false);
-    // write_lcd(1,false);
-    // write_lcd(0xff,false);
-    // gpio_set(GPIOB, CS);
-    //
     gpio_clear(GPIOB, CS);
-     write_lcd(CMD_RAMWR,true); // Ram Write
+
+    write_lcd(CMD_RAMWR,true); // Ram Write
+
+    set_databus_write();
+
     //
     // delay(10);
+}
 
+void end_write() {
+    set_databus_read();
+    gpio_set(GPIOB, CS);
 
 }
+
+
 // RGB 5-6-5
 void send_pixel(ubyte r,ubyte g, ubyte b) {
     b = b >> 3;
     g = g >> 2;
     r = r >> 3;
-    write_lcd((((b & 0x1f) << 3) | ((g&0x3f)>>3)),false);
-    write_lcd(((g&0x07)<<5) | (r&0x1f),false);
+    send_lcd_data((((b & 0x1f) << 3) | ((g&0x3f)>>3)));
+    send_lcd_data(((g&0x07)<<5) | (r&0x1f));
 }
 
-void end_write() {
-    gpio_set(GPIOB, CS);
-
-}
 
 void fill_display(ubyte r,ubyte g, ubyte b) {
 
-    gpio_clear(GPIOB, CS);
-    write_lcd(CMD_RAMWR,true); // Ram Write
-
+   start_write();
     // RGB-666
     // foreach(i; 0..103680) {
     //     write_lcd(0x3f<<2,false); // B
@@ -339,8 +327,11 @@ void fill_display(ubyte r,ubyte g, ubyte b) {
     // ubyte b = 0x10; // max = 1f
     // screen size 240x432 = 103680 pixels
     foreach(i; 0..103680) {
-         write_lcd(cast(ubyte)((b & 0x1f) << 3) | ((g&0x3f)>>3),false);
-         write_lcd(((g&0x07)<<5) | (r&0x1f),false);
+         //write_lcd(cast(ubyte)((b & 0x1f) << 3) | ((g&0x3f)>>3),false);
+         //write_lcd(((g&0x07)<<5) | (r&0x1f),false);
+        send_lcd_data((((b & 0x1f) << 3) | ((g&0x3f)>>3)));
+        send_lcd_data(((g&0x07)<<5) | (r&0x1f));
     }
-    gpio_set(GPIOB, CS);
+
+    end_write();
 }

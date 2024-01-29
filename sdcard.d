@@ -265,6 +265,7 @@ DRESULT disk_readp (ubyte* buff, uint sector, uint offset, uint count)
 {
     sdcard_select();
 
+
     if (count > 512)
         writeln("read size larger than buf: ", count);
 
@@ -278,12 +279,12 @@ DRESULT disk_readp (ubyte* buff, uint sector, uint offset, uint count)
             // wait for start marker
         } while (r == 0xff);
         if (r == 0xfe) {
-            uint skip = 514-offset - count;
+            uint skip = 514 - offset - count;
             foreach(i;0..offset)
                 sdcard_xfer(0xff); // skip bytes
             foreach(i;0..count) {
                 buff[i] = sdcard_xfer(0xff);
-                //write(cast(ushort)buf[i],' ');
+                //write(cast(ushort)buff[i],' ');
             }
             // read 16 bit CRC but ignore for now
             foreach(i;0..skip)

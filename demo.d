@@ -13,7 +13,6 @@ import sdcard;
 
 import pff;
 
-ILI9327 lcd;
 
 void gpio_setup()
 {
@@ -21,7 +20,6 @@ void gpio_setup()
     rcc_periph_clock_enable(RCC_GPIOB);
     rcc_periph_clock_enable(RCC_GPIOC);
 }
-
 
 ubyte[512] buf;
 
@@ -45,23 +43,23 @@ FRESULT rc;
 __gshared DIR dir;
 FILINFO fno;
 
-
-char* cur_file;
+//char* cur_file;
 
 FATFS fatfs;
-void open_card(DIR* dir) {
+
+void open_card(DIR* direc, FATFS* fat) {
 
 
     writeln("Mounting SDcard");
 
-    rc = pf_mount(&fatfs);
+    rc = pf_mount(fat);
     if (rc) {
         writeln("failed mounting: ", rc);
         return;
     }
 
     // open root dir
-    rc = pf_opendir(dir, "".ptr);
+    rc = pf_opendir(direc, "".ptr);
     if (rc) {
         writeln("failed open dir: ",rc);
         return;
@@ -69,7 +67,7 @@ void open_card(DIR* dir) {
 
     writeln("Dir open");
 }
-
+/+
 void next_dir(DIR* dir) {
 
     rc = pf_readdir(dir, &fno);	/* Read a directory item */
@@ -84,7 +82,8 @@ void next_dir(DIR* dir) {
         cur_file = &fno.fname[0];
 
     }
-}
+}+/
+
 
 extern(C) void main()
 {
@@ -100,13 +99,19 @@ extern(C) void main()
     writeln("STM32F401RE Dlang LibOpenCM3 demo");
 
     // TODO: unify setup naming convention
-    init_lm72a();
-    lcd_setup(lcd);
+    //init_lm72a();
+    lcd_setup();
     device_code_read();
+
+    // RGB 5-6-5
+    foreach(i; 0..7) {
+        fill_display(cols[i].r,cols[i].g,cols[i].b);
+        msleep(1000);
+    }
 
     init_sdcard();
 
-    open_card(&dir);
+    open_card(&dir, &fatfs);
     // next_dir(&dir);
     // next_dir(&dir);
     // next_dir(&dir);
@@ -140,15 +145,14 @@ extern(C) void main()
             start_write();
             foreach(j; 0..810) { // 810 blocks of 512 bytes
                 uint res;
-                pf_read(buf.ptr,512, &res);
-                //sdcard_readblock(j,buf);
+                pf_read(buf.ptr, 512, &res);
                 foreach(i; 0..128) { // data is RGBA (128*4 = 512)
                     send_pixel(buf[i*4],buf[i*4+1],buf[i*4+2]);
                 }
             }
             end_write();
             writeln(" loaded.");
-            writeln("Temperature: ",read_temp());
+            //writeln("Temperature: ",read_temp());
 
             msleep(8000);
         }
