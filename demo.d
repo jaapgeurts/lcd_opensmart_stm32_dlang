@@ -9,8 +9,9 @@ import mcudruntime;
 import ili9327;
 import lm75a;
 
-import sdcard;
+import touch;
 
+import sdcard;
 import pff;
 
 
@@ -21,7 +22,8 @@ void gpio_setup()
     rcc_periph_clock_enable(RCC_GPIOC);
 }
 
-ubyte[512] buf;
+// put in data segment to squeeze out every bit of performance.
+__gshared ubyte[512] buf;
 
 
 struct Color {
@@ -98,6 +100,16 @@ extern(C) void main()
 
     writeln("STM32F401RE Dlang LibOpenCM3 demo");
 
+
+    init_touch();
+
+    while(true) {
+      get_point();
+
+      msleep(1000);
+    }
+
+
     // TODO: unify setup naming convention
     //init_lm72a();
     lcd_setup();
@@ -147,7 +159,7 @@ extern(C) void main()
                 uint res;
                 pf_read(buf.ptr, 512, &res);
                 foreach(i; 0..128) { // data is RGBA (128*4 = 512)
-                    send_pixel(buf[i*4],buf[i*4+1],buf[i*4+2]);
+                    send_pixel(buf[i<<2],buf[(i<<2)+1],buf[(i<<2)+2]);
                 }
             }
             end_write();

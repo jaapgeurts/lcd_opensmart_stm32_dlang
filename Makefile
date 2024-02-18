@@ -25,7 +25,7 @@ LDSCRIPT=generated.stm32F401re.ld
 ################
 ##  SOURCES
 ################
-DSRCS = demo.d io.d clock.d mcudruntime.d ili9327.d lm75a.d sdcard.d crc7.d pff.d
+DSRCS = demo.d io.d clock.d mcudruntime.d ili9327.d lm75a.d sdcard.d crc7.d pff.d touch.d
 CSRCS = petitfat/pff.c
 #button.d
 OBJS = $(patsubst %.d,%.o,$(DSRCS)) $(patsubst %.c,%.o,$(CSRCS))

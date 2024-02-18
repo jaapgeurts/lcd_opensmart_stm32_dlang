@@ -92,7 +92,7 @@ ubyte sdcard_read_r3r7(ref uint resp) {
 ubyte sdcard_xfer(ubyte data) {
     // This line doesn't work.
     // return cast(ubyte)spi_xfer(SPI3,data);
-    sdcard_send(data); // send a to trigger the next response
+    spi_send(SPI3,data); // send a to trigger the next response
     return cast(ubyte)spi_read(SPI3);
 }
 
@@ -120,12 +120,13 @@ private void init_spi() {
     // gpio_set_output_options(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, SPI3_SCK | SPI3_MOSI);
 
     spi_init_master(SPI3,
-                    SPI_CR1_BAUDRATE_FPCLK_DIV_256, //  84Mhz / 256 =~ 380Khz
+                    SPI_CR1_BAUDRATE_FPCLK_DIV_4, //  84Mhz / 256 =~ 380Khz
 					SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
 					SPI_CR1_CPHA_CLK_TRANSITION_1,
 					SPI_CR1_DFF_8BIT,
 					SPI_CR1_MSBFIRST);
 
+    //spi_set_bidirectional_mode(SPI3);
     //spi_set_full_duplex_mode(SPI3);
     spi_disable_crc(SPI3);
     spi_enable_software_slave_management(SPI3);
@@ -184,8 +185,7 @@ void init_sdcard() {
     writeln(trail);
 
     // set baudrate faster: 84Mhz / 4 =~ 21 MHz
-
-    spi_set_baudrate_prescaler(SPI3,SPI_CR1_BAUDRATE_FPCLK_DIV_4); //
+    //spi_set_baudrate_prescaler(SPI3,SPI_CR1_BAUDRATE_FPCLK_DIV_4); //
 
     // setblocksize to 512
     // prolly already was 512
